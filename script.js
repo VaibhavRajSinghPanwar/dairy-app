@@ -885,18 +885,24 @@ function renderMilkNames() {
             }
         `;
 
-        const button =
-            document.createElement("button");
+        const actions = document.createElement("div");
+        actions.style.cssText = "display:flex;gap:6px;align-items:center;flex-wrap:wrap;";
 
-        button.innerText =
-            record ? "बदलें →" : "चुनें →";
+        const button = document.createElement("button");
+        button.innerText = record ? "✏️ बदलें" : "चुनें →";
+        button.onclick = () => selectMilkPerson(name);
+        actions.appendChild(button);
 
-        button.onclick =
-            () => selectMilkPerson(name);
+        if (record) {
+            const del = document.createElement("button");
+            del.className = "delete-btn";
+            del.innerText = "🗑️ हटाएँ";
+            del.onclick = () => deleteMilkRecord(record.id);
+            actions.appendChild(del);
+        }
 
         item.appendChild(info);
-        item.appendChild(button);
-
+        item.appendChild(actions);
         box.appendChild(item);
     });
 }
@@ -963,6 +969,21 @@ function selectMilkPerson(name) {
             .focus();
 
     }, 200);
+}
+
+
+function deleteMilkRecord(id) {
+    const record = milkRecords.find(r => String(r.id) === String(id));
+    if (!record) return;
+    if (!confirm(`${record.name} की ${formatDate(record.date)} ${sessionName(record.session)} की ${record.milk} L napti हटानी है?`)) return;
+
+    milkRecords = milkRecords.filter(r => String(r.id) !== String(id));
+    // A FAT entry cannot stand without its milk napti, so remove the linked FAT too.
+    fatRecords = fatRecords.filter(f => !(f.name === record.name && f.date === record.date && f.session === record.session));
+    saveAll();
+    updateHome();
+    renderMilkNames();
+    renderRecords();
 }
 
 
@@ -2126,99 +2147,59 @@ function combinedRecords() {
    ALL RECORDS
 ===================================================== */
 
-function renderRecords() {
-
-    const records =
-        combinedRecords();
-
-
-    const milk =
-        records.reduce(
-            (sum, r) =>
-                sum + Number(r.milk),
-            0
-        );
-
-
-    const amount =
-        records.reduce(
-            (sum, r) =>
-                sum + Number(r.amount || 0),
-            0
-        );
-
-
-    document.getElementById(
-        "totalMilk"
-    ).innerText =
-        `${milk.toFixed(1)} L`;
-
-
-    document.getElementById(
-        "totalAmount"
-    ).innerText =
-        money(amount);
-
-
-    document.getElementById(
-        "totalDays"
-    ).innerText =
-        records.length;
-
-
-    const box =
-        document.getElementById(
-            "recordsCards"
-        );
-
-    box.innerHTML = "";
-
-
-    records
-        .slice()
-        .sort(recordSort)
-        .forEach((r, index) => {
-
-            box.innerHTML += `
-
-            <div class="record-card">
-
-                <h3>
-                    ${getBuyerSerial(r.name)}. ${escapeHtml(r.name)}
-                </h3>
-
-                <div class="record-info">
-
-                    <span>
-                        📅 ${formatDate(r.date)}
-                    </span>
-
-                    <span>
-                        ${sessionName(r.session)}
-                    </span>
-
-                    <span>
-                        🥛 ${r.milk} L
-                    </span>
-
-                    <span>
-                        🧪 ${r.fat ?? "बाकी"}
-                    </span>
-
-                    <span>
-                        💰 ${
-                            r.amount !== null
-                                ? money(r.amount)
-                                : "-"
-                        }
-                    </span>
-
-                </div>
-
-            </div>`;
-        });
+function getRecordFilters() {
+    return {
+        date: document.getElementById("recordsDate")?.value || "",
+        session: document.getElementById("recordsSession")?.value || "all"
+    };
 }
 
+function filterByRecordControls(records) {
+    const {date, session} = getRecordFilters();
+    return records.filter(r => (!date || r.date === date) && (session === "all" || r.session === session));
+}
+
+function clearRecordFilters() {
+    const d = document.getElementById("recordsDate");
+    const ss = document.getElementById("recordsSession");
+    if (d) d.value = "";
+    if (ss) ss.value = "all";
+    renderRecords();
+}
+
+function renderRecords() {
+    const records = filterByRecordControls(combinedRecords()).slice().sort(recordSort);
+    const localSales = filterByRecordControls(saleRecords).slice().sort(recordSort);
+    const mainSales = filterByRecordControls(mainDairySales).slice().sort(recordSort);
+
+    const milk = records.reduce((sum, r) => sum + Number(r.milk || 0), 0);
+    const amount = records.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    document.getElementById("totalMilk").innerText = `${milk.toFixed(1)} L`;
+    document.getElementById("totalAmount").innerText = money(amount);
+    document.getElementById("totalDays").innerText = records.length;
+
+    const box = document.getElementById("recordsCards");
+    if (!box) return;
+    box.innerHTML = records.length ? "" : `<div class="record-card">चुने हुए फिल्टर के अनुसार कोई रिकॉर्ड नहीं</div>`;
+
+    records.forEach(r => {
+        const serial = getRecordSerial(r.name, r);
+        box.innerHTML += `<div class="record-card">
+            <h3>${serial === 999999 ? "-" : (r.type === "sale" || r.quantity != null ? getSellerSerial(r.name) : getBuyerSerial(r.name))}. ${escapeHtml(r.name)}</h3>
+            <div class="record-info">
+                <span>📅 ${formatDate(r.date)}</span>
+                <span>${sessionName(r.session)}</span>
+                <span>🥛 ${Number(r.milk || 0).toFixed(1)} L</span>
+                <span>🧪 ${r.fat ?? "बाकी"}</span>
+                <span>💰 ${r.amount !== null && r.amount !== undefined ? money(r.amount) : "-"}</span>
+            </div>
+        </div>`;
+    });
+
+    renderAllLocalSales(localSales);
+    renderAllMainDairySales(mainSales);
+}
 
 function renderAllLocalSales(records) {
     const box = document.getElementById("allLocalSaleCards"); if (!box) return;
@@ -2231,7 +2212,7 @@ function renderAllMainDairySales(records) {
     records.slice().sort(recordSort).forEach(r=>{ box.innerHTML += `<div class="record-card"><h3>🏭 मुख्य डेयरी बिक्री</h3><div class="record-info"><span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span><span>🥛 ${Number(r.milk||0)} L</span><span>🧪 ${Number(r.fat||0)} FAT</span><span>₹ ${Number(r.rate||0)}/FAT</span><span>💰 ${money(r.amount||0)}</span></div></div>`; });
 }
 function downloadAllLocalSalesExcel() {
- const rows=saleRecords.map(r=>({नाम:r.name||"",तारीख:formatDate(r.date),समय:sessionName(r.session),दूध_लीटर:Number(r.quantity||0),भाव_प्रति_लीटर:Number(r.rate||0),कुल_राशि:Number(r.amount||0),भुगतान:(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"})); if(!rows.length)return alert("कोई स्थानीय बिक्री रिकॉर्ड नहीं है"); createExcel(rows,"स्थानीय_दूध_बिक्री.xlsx","स्थानीय बिक्री");
+ const rows=filterByRecordControls(saleRecords).slice().sort(recordSort).map(r=>({क्रमांक:getSellerSerial(r.name||""),नाम:r.name||"",तारीख:formatDate(r.date),समय:sessionName(r.session),दूध_लीटर:Number(r.quantity||0),भाव_प्रति_लीटर:Number(r.rate||0),कुल_राशि:Number(r.amount||0),भुगतान:(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"})); if(!rows.length)return alert("कोई स्थानीय बिक्री रिकॉर्ड नहीं है"); createExcel(rows,"स्थानीय_दूध_बिक्री.xlsx","स्थानीय बिक्री");
 
     renderAllLocalSales(saleRecords);
     renderAllMainDairySales(mainDairySales);
@@ -3355,7 +3336,7 @@ function createExcel(
 function downloadAllRecordsExcel() {
 
     const data =
-        combinedRecords().map(r => ({
+        filterByRecordControls(combinedRecords()).slice().sort(recordSort).map(r => ({
 
             नाम:
                 r.name,

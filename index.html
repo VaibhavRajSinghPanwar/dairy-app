@@ -1087,11 +1087,27 @@
     </div>
 
 
+    <div class="record-filters" style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;align-items:end;">
+        <label style="flex:1;min-width:150px;">
+            📅 तारीख
+            <input type="date" id="recordsDate" onchange="renderRecords()">
+        </label>
+        <label style="flex:1;min-width:150px;">
+            🌅🌙 समय
+            <select id="recordsSession" onchange="renderRecords()">
+                <option value="all">सभी</option>
+                <option value="morning">🌅 सुबह</option>
+                <option value="evening">🌙 शाम</option>
+            </select>
+        </label>
+        <button type="button" class="secondary-btn" onclick="clearRecordFilters()">सभी तारीखें</button>
+    </div>
+
     <button
         class="excel-btn"
         onclick="downloadAllRecordsExcel()"
     >
-        📥 Excel डाउनलोड करें
+        📥 चुना हुआ रिकॉर्ड Excel डाउनलोड करें
     </button>
 
 
