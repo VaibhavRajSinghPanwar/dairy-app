@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>डेयरी प्रबंधन</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🥛</div>
+    <h1>डेयरी प्रबंधन</h1>
+    <p id="loginSubtitle">लॉगिन करके अपना डेयरी हिसाब देखें</p>
+    <input id="loginUsername" type="text" placeholder="यूज़रनेम" autocomplete="username">
+    <input id="loginPassword" type="password" placeholder="पासवर्ड" autocomplete="current-password">
+        <button class="login-main-btn" id="loginSubmitBtn" onclick="handleLogin()">लॉगिन करें</button>
+    <p id="loginMessage" class="login-message"></p>
+    <small>डेटा इसी फोन / ब्राउज़र में सुरक्षित रहेगा</small>
+  </div>
+</div>
+
+
+<!-- ================= HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-top">
+
+        <button class="logo-btn" onclick="goHome()">
+            🥛 <span>डेयरी</span>
+        </button>
+
+        <div class="header-actions">
+            <button id="currentUserBtn" class="user-chip" onclick="openPage('accountPage')">👤 यूज़र</button>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </div>
+
+    </div>
+
+    <!-- GLOBAL MORNING / EVENING -->
+
+    <div class="session-switch">
+
+        <button
+            id="morningBtn"
+            onclick="setGlobalSession('morning')"
+        >
+            🌅 सुबह
+        </button>
+
+        <button
+            id="eveningBtn"
+            onclick="setGlobalSession('evening')"
+        >
+            🌙 शाम
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- ================= MENU ================= -->
+
+<div
+    id="menuOverlay"
+    class="menu-overlay"
+    onclick="closeMenu()"
+></div>
+
+<aside id="sideMenu" class="side-menu">
+
+    <div class="menu-header">
+
+        <h2>☰ मेन्यू</h2>
+
+        <button onclick="closeMenu()">✕</button>
+
+    </div>
+
+    <div class="menu-section-title">
+        मुख्य सेटिंग
+    </div>
+
+    <button onclick="openPage('customersPage')">
+        👥 नाम की सूची
+    </button>
+
+    <button onclick="openPage('fatRatePage')">
+        💰 फैट का भाव
+    </button>
+
+    <button onclick="openPage('milkRatePage')">
+        💵 दूध का भाव
+    </button>
+
+
+    <div class="menu-section-title">
+        मुख्य डेयरी
+    </div>
+
+    <button onclick="openMainDairySale()">
+        🏭 मुख्य डेयरी को दूध बेचें
+    </button>
+
+    <button onclick="openPage('mainDairyRatePage')">
+        🏷️ मुख्य डेयरी FAT भाव
+    </button>
+
+
+    <div class="menu-section-title">
+        खर्च और रिपोर्ट
+    </div>
+
+    <button onclick="openExpensePage()">
+        ⛽ खर्च दर्ज करें
+    </button>
+
+    <button onclick="openPage('reportPage'); prepareBusinessReport()">
+        📊 लाभ / हानि रिपोर्ट
+    </button>
+
+
+    <div class="menu-section-title">
+        रिकॉर्ड
+    </div>
+
+    <button onclick="openPage('recordsPage'); renderRecords()">
+        📋 सभी रिकॉर्ड
+    </button>
+
+    <button onclick="openPage('profilePage'); fillProfile()">
+        👤 प्रोफाइल
+    </button>
+
+    <button onclick="openPage('transactionsPage'); fillTransactionPage()">
+        💳 Transaction History
+    </button>
+
+    <div class="menu-section-title">डेटा और अकाउंट</div>
+    <button onclick="downloadBackup()">💾 बैकअप डाउनलोड करें</button>
+    <button onclick="document.getElementById('restoreFile').click()">📂 बैकअप वापस डालें</button>
+    <input id="restoreFile" type="file" accept="application/json" class="hidden" onchange="restoreBackup(event)">
+    <button onclick="openPage('accountPage')">👤 अकाउंट</button>
+    <button class="logout-menu-btn" onclick="logoutUser()">🚪 लॉगआउट</button>
+
+</aside>
+
+
+<main class="app-container">
+
+
+<!-- ================= HOME ================= -->
+
+<section id="homePage" class="page active">
+
+    <div class="home-title">
+
+        <h1>डेयरी प्रबंधन</h1>
+
+        <p id="todayDisplay"></p>
+
+    </div>
+
+
+    <!-- MAIN FAST ACTIONS -->
+
+    <div class="main-actions">
+
+        <button
+            class="main-card milk-card"
+            onclick="openMilkNames()"
+        >
+
+            <span class="main-icon">🥛</span>
+
+            <strong>नापती लें</strong>
+
+            <small>दूध की मात्रा दर्ज करें</small>
+
+        </button>
+
+
+        <button
+            class="main-card fat-card-btn"
+            onclick="openFatEntry()"
+        >
+
+            <span class="main-icon">🧪</span>
+
+            <strong>फैट दर्ज करें</strong>
+
+            <small>फैट और राशि दर्ज करें</small>
+
+        </button>
+
+
+        <button
+            class="main-card sale-card"
+            onclick="openSaleNames()"
+        >
+
+            <span class="main-icon">💰</span>
+
+            <strong>दूध बेचें</strong>
+
+            <small>ग्राहक को दूध बेचें</small>
+
+        </button>
+
+    </div>
+
+
+    <div class="home-summary">
+
+        <div>
+
+            <span>आज का दूध</span>
+
+            <strong id="homeMilk">0 L</strong>
+
+        </div>
+
+
+        <div>
+
+            <span>आज की खरीद</span>
+
+            <strong id="homeAmount">₹0</strong>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= MILK NAME LIST ================= -->
+
+<section id="milkNamesPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h2>🥛 नापती लें</h2>
+
+            <p id="milkSessionText"></p>
+
+        </div>
+
+    </div>
+
+
+    <div class="date-row">
+
+        <label>तारीख</label>
+
+        <input
+            type="date"
+            id="milkDate"
+            onchange="renderMilkNames()"
+        >
+
+    </div>
+
+
+    <div class="search-box">
+
+        <input
+            type="text"
+            placeholder="नाम खोजें..."
+            oninput="filterNameList('milkNameList', this.value)"
+        >
+
+    </div>
+
+
+    <div
+        id="milkNameList"
+        class="name-grid"
+    ></div>
+
+</section>
+
+
+<!-- ================= MILK ENTRY ================= -->
+
+<section id="milkEntryPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="openMilkNames()"
+        >
+            ←
+        </button>
+
+        <h2>🥛 नापती</h2>
+
+    </div>
+
+
+    <div class="person-entry-card">
+
+        <div class="person-avatar">👤</div>
+
+        <h2 id="milkPersonName"></h2>
+
+        <p id="milkEntryInfo"></p>
+
+
+        <label>कितना दूध (लीटर)?</label>
+
+        <input
+            type="number"
+            step="0.1"
+            id="milkQuantity"
+            placeholder="जैसे 10"
+            inputmode="decimal"
+        >
+
+
+        <button
+            class="big-save"
+            onclick="saveMilkFast()"
+        >
+            ✓ सेव करें
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= FAT ENTRY ================= -->
+
+<section id="fatPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h2>🧪 फैट दर्ज करें</h2>
+
+            <p id="fatSessionText"></p>
+
+        </div>
+
+    </div>
+
+
+    <div class="date-row">
+
+        <label>तारीख</label>
+
+        <input
+            type="date"
+            id="fatDate"
+            onchange="loadFatQueue()"
+        >
+
+    </div>
+
+
+    <div class="progress-wrap">
+
+        <span id="fatProgressText">0 / 0</span>
+
+        <div class="progress-bar">
+
+            <div id="progressFill"></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="person-entry-card">
+
+        <div class="serial-number">
+
+            क्रमांक
+            <strong id="fatSerial">-</strong>
+
+        </div>
+
+
+        <h2 id="fatPersonName">
+            नापती रिकॉर्ड चुनें
+        </h2>
+
+
+        <div class="fat-info">
+
+            <div>
+
+                दूध
+
+                <strong id="fatPersonMilk">
+                    0 L
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                भाव
+
+                <strong>
+                    ₹<span id="fatRateDisplay">0</span>
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <label>फैट कितना है?</label>
+
+        <input
+            type="number"
+            step="0.1"
+            id="fatValue"
+            placeholder="जैसे 4.9"
+            inputmode="decimal"
+            oninput="previewFat()"
+        >
+
+
+        <div class="calculation-box">
+
+            कुल राशि
+
+            <strong>
+                ₹<span id="fatAmountPreview">0</span>
+            </strong>
+
+        </div>
+
+
+        <button
+            id="fatSaveBtn"
+            class="big-save"
+            onclick="saveFat()"
+        >
+            ✓ फैट सेव करें
+        </button>
+
+        <div class="calculation-box" style="margin-top:12px;">
+            दर्ज किया हुआ FAT
+            <strong id="fatRecordedValue">अभी दर्ज नहीं</strong>
+            <button id="fatEditCurrentBtn" class="edit-btn" style="display:none;margin-top:8px;" onclick="editCurrentFat()">✏️ FAT Edit करें</button>
+        </div>
+
+        <div id="fatRecordedList" style="margin-top:14px;"></div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CUSTOMER MILK SALE ================= -->
+
+<section id="saleNamesPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h2>💰 दूध बेचें</h2>
+
+            <p id="saleSessionText"></p>
+
+        </div>
+
+    </div>
+
+
+    <div class="date-row">
+
+        <label>तारीख</label>
+
+        <input
+            type="date"
+            id="saleDate"
+        >
+
+    </div>
+
+
+    <div class="search-box">
+
+        <input
+            type="text"
+            placeholder="नाम खोजें..."
+            oninput="filterNameList('saleNameList', this.value)"
+        >
+
+    </div>
+
+
+    <div
+        id="saleNameList"
+        class="name-grid"
+    ></div>
+
+</section>
+
+
+<!-- ================= SALE ENTRY ================= -->
+
+<section id="saleEntryPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="openSaleNames()"
+        >
+            ←
+        </button>
+
+        <h2>💰 दूध बिक्री</h2>
+
+    </div>
+
+
+    <div class="person-entry-card">
+
+        <div class="person-avatar">👤</div>
+
+        <h2 id="salePersonName"></h2>
+
+        <p id="saleEntryInfo"></p>
+
+
+        <label>कितना दूध बेचा?</label>
+
+        <input
+            type="number"
+            step="0.1"
+            id="saleQuantity"
+            placeholder="जैसे 5"
+            inputmode="decimal"
+            oninput="previewSaleAmount()"
+        >
+
+
+        <div class="calculation-box">
+
+            कुल राशि
+
+            <strong>
+                ₹<span id="saleAmountPreview">0</span>
+            </strong>
+
+            <small>
+                भाव:
+                ₹<span id="saleRateDisplay">0</span>/L
+            </small>
+
+        </div>
+
+
+        <label>भुगतान</label>
+
+        <div class="payment-buttons">
+
+            <button
+                id="cashBtn"
+                class="payment active-payment"
+                onclick="setPayment('cash')"
+            >
+                💵 नगद
+            </button>
+
+            <button
+                id="creditBtn"
+                class="payment"
+                onclick="setPayment('credit')"
+            >
+                📒 उधार
+            </button>
+
+        </div>
+
+
+        <button
+            class="big-save"
+            onclick="saveSaleFast()"
+        >
+            ✓ बिक्री सेव करें
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CUSTOMERS ================= -->
+
+<section id="customersPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>👥 नाम की सूची</h2>
+
+    </div>
+
+
+    <div class="add-box">
+
+        <select id="customerListFilter" onchange="renderCustomers()">
+            <option value="all">👥 सभी लोग</option>
+            <option value="buyer">🥛 जिनसे डेयरी दूध खरीदती है</option>
+            <option value="seller">🏪 जिन्हें डेयरी दूध बेचती है</option>
+        </select>
+
+        <input
+            id="customerName"
+            placeholder="नया नाम लिखें"
+        >
+
+        <input
+            type="hidden"
+            id="editCustomerIndex"
+        >
+
+        <select id="customerType">
+            <option value="buyer">🥛 खरीदी — जिनसे डेयरी दूध खरीदती है</option>
+            <option value="seller">🏪 बिक्री — जिन्हें डेयरी दूध बेचती है</option>
+            <option value="both">🔄 दोनों — खरीदी और बिक्री</option>
+        </select>
+
+        <button onclick="saveCustomer()">
+            + जोड़ें
+        </button>
+
+    </div>
+
+
+    <div
+        id="customerList"
+        class="customer-list"
+    ></div>
+
+</section>
+
+
+<!-- ================= FAT RATE ================= -->
+
+<section id="fatRatePage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>💰 फैट का भाव</h2>
+
+    </div>
+
+
+    <div class="settings-card">
+
+        <h3>वर्तमान भाव</h3>
+
+        <strong class="big-price">
+
+            ₹<span id="currentRate">0</span>
+
+        </strong>
+
+        <p>प्रति फैट × प्रति लीटर</p>
+
+
+        <input
+            id="newRate"
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            placeholder="नया भाव"
+        >
+
+
+        <button onclick="saveRate()">
+            भाव सेव करें
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= MILK SALE RATE ================= -->
+
+<section id="milkRatePage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>💵 दूध का भाव</h2>
+
+    </div>
+
+
+    <div class="settings-card">
+
+        <h3>वर्तमान भाव</h3>
+
+        <strong class="big-price">
+
+            ₹<span id="currentMilkRate">0</span>
+
+        </strong>
+
+        <p>प्रति लीटर</p>
+
+
+        <input
+            id="newMilkRate"
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            placeholder="नया भाव"
+        >
+
+
+        <button onclick="saveMilkRate()">
+            भाव सेव करें
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= MAIN DAIRY RATE ================= -->
+
+<section id="mainDairyRatePage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>🏭 मुख्य डेयरी FAT भाव</h2>
+
+    </div>
+
+
+    <div class="settings-card">
+
+        <h3>वर्तमान मुख्य डेयरी भाव</h3>
+
+        <strong class="big-price">
+
+            ₹<span id="currentMainDairyRate">0</span>
+
+        </strong>
+
+        <p>प्रति फैट × प्रति लीटर</p>
+
+
+        <input
+            id="newMainDairyRate"
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            placeholder="नया मुख्य डेयरी भाव"
+        >
+
+
+        <button onclick="saveMainDairyRate()">
+            भाव सेव करें
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= MAIN DAIRY SALE ================= -->
+
+<section id="mainDairySalePage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h2>🏭 मुख्य डेयरी को दूध बेचें</h2>
+
+            <p id="mainDairySessionText"></p>
+
+        </div>
+
+    </div>
+
+
+    <div class="person-entry-card">
+
+        <label>तारीख</label>
+
+        <input
+            type="date"
+            id="mainDairyDate"
+        >
+
+
+        <div class="session-display">
+
+            <strong id="mainDairySessionDisplay"></strong>
+
+        </div>
+
+
+        <label>कितना दूध बेचा? (लीटर)</label>
+
+        <input
+            type="number"
+            step="0.1"
+            id="mainDairyMilk"
+            placeholder="जैसे 100"
+            inputmode="decimal"
+            oninput="previewMainDairyAmount()"
+        >
+
+
+        <label>फैट कितना है?</label>
+
+        <input
+            type="number"
+            step="0.1"
+            id="mainDairyFat"
+            placeholder="जैसे 5.8"
+            inputmode="decimal"
+            oninput="previewMainDairyAmount()"
+        >
+
+
+        <div class="fat-info">
+
+            <div>
+
+                मुख्य डेयरी भाव
+
+                <strong>
+                    ₹<span id="mainDairyRateDisplay">0</span>
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                कुल राशि
+
+                <strong>
+                    ₹<span id="mainDairyAmountPreview">0</span>
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <button
+            class="big-save"
+            onclick="saveMainDairySale()"
+        >
+            ✓ बिक्री सेव करें
+        </button>
+
+    </div>
+
+
+    <button
+        class="excel-btn"
+        onclick="downloadMainDairyExcel()"
+    >
+        📥 मुख्य डेयरी रिकॉर्ड Excel
+    </button>
+
+
+    <div
+        id="mainDairyRecords"
+        class="record-cards"
+    ></div>
+
+</section>
+
+
+<!-- ================= EXPENSE ================= -->
+
+<section id="expensePage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h2>⛽ खर्च दर्ज करें</h2>
+
+            <p id="expenseSessionText"></p>
+
+        </div>
+
+    </div>
+
+
+    <div class="person-entry-card">
+
+        <label>तारीख</label>
+
+        <input
+            type="date"
+            id="expenseDate"
+        >
+
+
+        <label>खर्च का प्रकार</label>
+
+        <select id="expenseType">
+
+            <option value="petrol">
+                ⛽ पेट्रोल
+            </option>
+
+            <option value="transport">
+                🚚 ट्रांसपोर्ट
+            </option>
+
+            <option value="other">
+                📦 अन्य खर्च
+            </option>
+
+        </select>
+
+
+        <label>राशि</label>
+
+        <input
+            type="number"
+            step="0.01"
+            id="expenseAmount"
+            placeholder="जैसे 500"
+            inputmode="decimal"
+        >
+
+
+        <label>विवरण (वैकल्पिक)</label>
+
+        <input
+            type="text"
+            id="expenseNote"
+            placeholder="खर्च का विवरण"
+        >
+
+
+        <button
+            class="big-save"
+            onclick="saveExpense()"
+        >
+            ✓ खर्च सेव करें
+        </button>
+
+    </div>
+
+
+    <button
+        class="excel-btn"
+        onclick="downloadExpenseExcel()"
+    >
+        📥 खर्च Excel डाउनलोड करें
+    </button>
+
+
+    <div
+        id="expenseRecords"
+        class="record-cards"
+    ></div>
+
+</section>
+
+
+<!-- ================= ALL RECORDS ================= -->
+
+<section id="recordsPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>📋 सभी रिकॉर्ड</h2>
+
+    </div>
+
+
+    <div class="summary">
+
+        <div>
+            कुल दूध
+            <strong id="totalMilk">0 L</strong>
+        </div>
+
+        <div>
+            कुल खरीद
+            <strong id="totalAmount">₹0</strong>
+        </div>
+
+        <div>
+            रिकॉर्ड
+            <strong id="totalDays">0</strong>
+        </div>
+
+    </div>
+
+
+    <button
+        class="excel-btn"
+        onclick="downloadAllRecordsExcel()"
+    >
+        📥 Excel डाउनलोड करें
+    </button>
+
+
+    <div
+        id="recordsCards"
+        class="record-cards"
+    ></div>
+
+    <h3 class="section-heading">🏪 स्थानीय दूध बिक्री</h3>
+    <button class="excel-btn" onclick="downloadAllLocalSalesExcel()">📥 स्थानीय बिक्री Excel डाउनलोड करें</button>
+    <div id="allLocalSaleCards" class="record-cards"></div>
+
+    <h3 class="section-heading">🏭 मुख्य डेयरी बिक्री</h3>
+    <button class="excel-btn" onclick="downloadMainDairyExcel()">📥 मुख्य डेयरी बिक्री Excel डाउनलोड करें</button>
+    <div id="allMainDairySaleCards" class="record-cards"></div>
+
+</section>
+
+
+<!-- ================= PROFILE ================= -->
+
+<section id="profilePage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>👤 प्रोफाइल</h2>
+
+    </div>
+
+
+    <select
+        id="profileCustomer"
+        onchange="showProfile()"
+    ></select>
+
+
+    <select
+        id="profileType"
+        onchange="changeProfileType()"
+    >
+
+        <option value="all">
+            अभी तक का पूरा डेटा
+        </option>
+
+        <option value="monthly">
+            मासिक डेटा
+        </option>
+
+        <option value="yearly">
+            वार्षिक डेटा
+        </option>
+
+    </select>
+
+
+    <input
+        type="month"
+        id="profileMonth"
+        class="hidden"
+        onchange="showProfile()"
+    >
+
+
+    <select
+        id="profileYear"
+        class="hidden"
+        onchange="showProfile()"
+    ></select>
+
+
+    <div
+        id="profileData"
+        class="hidden"
+    >
+
+        <div class="summary">
+
+            <div>
+                दूध
+                <strong id="profileMilk">0</strong>
+            </div>
+
+            <div>
+                देना
+                <strong id="profileAmount">₹0</strong>
+            </div>
+
+            <div>
+                लेना
+                <strong id="profileReceivable">₹0</strong>
+            </div>
+
+        </div>
+
+        <div class="payment-buttons">
+            <button class="payment active-payment" onclick="addSettlement('received')">💰 पैसे जमा हुए</button>
+            <button class="payment" onclick="addSettlement('paid')">💸 पैसे दे दिए</button>
+        </div>
+
+
+        <button
+            class="excel-btn"
+            onclick="downloadProfileExcel()"
+        >
+            📥 Excel डाउनलोड करें
+        </button>
+
+
+        <div
+            id="profileCards"
+            class="record-cards"
+        ></div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= BUSINESS REPORT ================= -->
+
+<section id="reportPage" class="page">
+
+    <div class="page-header">
+
+        <button
+            class="back-btn"
+            onclick="goHome()"
+        >
+            ←
+        </button>
+
+        <h2>📊 रिपोर्ट</h2>
+
+    </div>
+
+
+    <select
+        id="reportType"
+        onchange="changeReportType()"
+    >
+
+        <option value="daily">
+            दैनिक रिपोर्ट
+        </option>
+
+        <option value="monthly">
+            मासिक रिपोर्ट
+        </option>
+
+        <option value="yearly">
+            वार्षिक रिपोर्ट
+        </option>
+
+        <option value="all">
+            अभी तक का पूरा डेटा
+        </option>
+
+    </select>
+
+
+    <input
+        type="date"
+        id="reportDate"
+        onchange="generateReport()"
+    >
+
+    <select id="reportSession" onchange="generateReport()">
+        <option value="all">🌅🌙 सुबह + शाम</option>
+        <option value="morning">🌅 केवल सुबह</option>
+        <option value="evening">🌙 केवल शाम</option>
+    </select>
+
+
+    <input
+        type="month"
+        id="reportMonth"
+        class="hidden"
+        onchange="generateReport()"
+    >
+
+
+    <select
+        id="reportYear"
+        class="hidden"
+        onchange="generateReport()"
+    ></select>
+
+
+    <button onclick="generateReport()">
+        📊 रिपोर्ट देखें
+    </button>
+
+
+    <div
+        id="reportResult"
+        class="hidden"
+    >
+
+        <div class="business-summary">
+
+            <div class="business-card">
+                <span>🥛 कुल खरीदा दूध</span>
+                <strong id="reportMilk">0 L</strong>
+            </div>
+
+            <div class="business-card">
+                <span>💳 खरीद लागत</span>
+                <strong id="reportPurchase">₹0</strong>
+            </div>
+
+            <div class="business-card">
+                <span>🏭 मुख्य डेयरी को बेचा दूध</span>
+                <strong id="reportMainDairyMilk">0 L</strong>
+            </div>
+
+            <div class="business-card">
+                <span>🏭 मुख्य डेयरी बिक्री आय</span>
+                <strong id="reportMainDairyIncome">₹0</strong>
+            </div>
+
+            <div class="business-card">
+                <span>🏪 स्थानीय बिक्री दूध</span>
+                <strong id="reportLocalMilk">0 L</strong>
+            </div>
+
+            <div class="business-card">
+                <span>🏪 स्थानीय बिक्री आय</span>
+                <strong id="reportLocalIncome">₹0</strong>
+            </div>
+
+            <div class="business-card">
+                <span>🧪 औसत FAT</span>
+                <strong id="reportAverageFat">0.00</strong>
+            </div>
+            <div class="business-card">
+                <span>💰 कुल बिक्री आय</span>
+                <strong id="reportIncome">₹0</strong>
+            </div>
+
+            <div class="business-card">
+                <span>⛽ पेट्रोल</span>
+                <strong id="reportPetrol">₹0</strong>
+            </div>
+
+            <div class="business-card">
+                <span>🚚 ट्रांसपोर्ट</span>
+                <strong id="reportTransport">₹0</strong>
+            </div>
+
+            <div class="business-card">
+                <span>📦 अन्य खर्च</span>
+                <strong id="reportOtherExpense">₹0</strong>
+            </div>
+
+            <div class="business-card total-expense">
+                <span>कुल खर्च</span>
+                <strong id="reportExpense">₹0</strong>
+            </div>
+
+            <div
+                id="profitCard"
+                class="business-card profit-card"
+            >
+                <span id="profitLabel">लाभ</span>
+                <strong id="reportProfit">₹0</strong>
+            </div>
+
+        </div>
+
+        <h3 class="section-heading">🥛 खरीदा गया दूध</h3>
+        <div id="reportPurchaseCards" class="record-cards"></div>
+
+        <h3 class="section-heading">🏪 स्थानीय बिक्री</h3>
+        <div id="reportLocalSaleCards" class="record-cards"></div>
+
+        <h3 class="section-heading">🏭 मुख्य डेयरी बिक्री</h3>
+        <div id="reportMainDairyCards" class="record-cards"></div>
+
+
+        <button
+            class="excel-btn"
+            onclick="downloadBusinessReportExcel()"
+        >
+            📥 रिपोर्ट Excel डाउनलोड करें
+        </button>
+
+
+
+        <h3 class="section-heading">
+            ⛽ खर्च
+        </h3>
+
+        <div
+            id="reportExpenseCards"
+            class="record-cards"
+        ></div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= TRANSACTION HISTORY ================= -->
+<section id="transactionsPage" class="page">
+    <div class="page-header">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <h2>💳 Transaction History</h2>
+    </div>
+
+    <select id="transactionCustomer" onchange="renderTransactionPage()"></select>
+
+    <div class="summary">
+        <div>
+            बाकी देना
+            <strong id="transactionPayable">₹0</strong>
+        </div>
+        <div>
+            बाकी लेना
+            <strong id="transactionReceivable">₹0</strong>
+        </div>
+    </div>
+
+    <div id="transactionPageCards" class="record-cards"></div>
+</section>
+
+
+<!-- ================= ACCOUNT ================= -->
+<section id="accountPage" class="page">
+    <div class="page-header"><button class="back-btn" onclick="goHome()">←</button><h2>👤 अकाउंट</h2></div>
+    <div class="card">
+        <p>यूज़रनेम: <strong id="accountUsername">-</strong></p>
+        <p class="muted">यह ऐप लाइसेंस लॉगिन से सुरक्षित है। यूज़रनेम और पासवर्ड केवल ऐप मालिक द्वारा बदले जा सकते हैं।</p>
+        <button class="save-btn danger" onclick="logoutUser()">लॉगआउट</button>
+    </div>
+</section>
+
+</main>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>

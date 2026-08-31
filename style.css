@@ -1,0 +1,866 @@
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+    --primary: #2563eb;
+    --success: #16a34a;
+    --orange: #ea580c;
+    --purple: #7c3aed;
+    --danger: #dc2626;
+    --dark: #1f2937;
+    --bg: #f4f6f8;
+    --text: #1f2937;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+}
+
+button:active {
+    transform: scale(.98);
+}
+
+/* ================= HEADER ================= */
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+
+.header-top {
+    max-width: 1200px;
+    margin: auto;
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-btn {
+    background: none;
+    color: #111;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.menu-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    font-size: 22px;
+}
+
+.session-switch {
+    display: flex;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 12px 12px;
+    gap: 8px;
+}
+
+.session-switch button {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    color: #555;
+    font-weight: bold;
+}
+
+.session-switch button.active-session {
+    background: var(--primary);
+    color: white;
+}
+
+/* ================= APP ================= */
+
+.app-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+    padding: 16px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ================= HOME ================= */
+
+.home-title {
+    text-align: center;
+    margin: 20px 0 25px;
+}
+
+.home-title h1 {
+    margin-bottom: 5px;
+}
+
+.home-title p {
+    color: #64748b;
+}
+
+.main-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.main-card {
+    min-height: 140px;
+    border-radius: 20px;
+    padding: 22px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-card strong {
+    font-size: 22px;
+    margin: 8px 0;
+}
+
+.main-card small {
+    opacity: .9;
+}
+
+.main-icon {
+    font-size: 42px;
+}
+
+.milk-card {
+    background: #2563eb;
+}
+
+.fat-card-btn {
+    background: #7c3aed;
+}
+
+.sale-card {
+    background: #059669;
+}
+
+/* ================= SUMMARY ================= */
+
+.home-summary,
+.summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.home-summary div,
+.summary div {
+    background: white;
+    padding: 15px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.home-summary strong,
+.summary strong {
+    display: block;
+    font-size: 19px;
+    margin-top: 6px;
+}
+
+/* ================= PAGE HEADER ================= */
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.page-header h2 {
+    margin: 0;
+}
+
+.page-header p {
+    margin: 4px 0 0;
+    color: #64748b;
+}
+
+.back-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    font-size: 24px;
+}
+
+/* ================= FORM ================= */
+
+input,
+select {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    margin: 8px 0 16px;
+    background: white;
+}
+
+.date-row {
+    background: white;
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+}
+
+.date-row input {
+    margin-bottom: 0;
+}
+
+.search-box input {
+    background: white;
+}
+
+/* ================= NAME GRID ================= */
+
+.name-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.name-item {
+    padding: 18px;
+    background: white;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    font-size: 17px;
+}
+
+.name-item.done {
+    border-left: 5px solid var(--success);
+}
+
+.name-item button {
+    background: var(--primary);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+}
+
+/* ================= ENTRY ================= */
+
+.person-entry-card {
+    max-width: 520px;
+    margin: auto;
+    background: white;
+    padding: 24px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,.08);
+}
+
+.person-avatar {
+    font-size: 50px;
+}
+
+.person-entry-card h2 {
+    margin: 12px 0 5px;
+}
+
+.person-entry-card label {
+    display: block;
+    text-align: left;
+    margin-top: 18px;
+    font-weight: bold;
+}
+
+.person-entry-card input,
+.person-entry-card select {
+    font-size: 18px;
+}
+
+.big-save {
+    width: 100%;
+    padding: 17px;
+    background: var(--success);
+    color: white;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* ================= FAT ================= */
+
+.progress-wrap {
+    margin: 15px 0;
+}
+
+.progress-bar {
+    height: 12px;
+    background: #ddd;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+#progressFill {
+    height: 100%;
+    width: 0;
+    background: var(--success);
+    transition: .3s;
+}
+
+.serial-number {
+    background: #dbeafe;
+    padding: 8px 14px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.fat-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.fat-info div {
+    background: #f1f5f9;
+    padding: 14px;
+    border-radius: 12px;
+}
+
+.fat-info strong {
+    display: block;
+    margin-top: 5px;
+}
+
+.calculation-box {
+    background: #dcfce7;
+    padding: 15px;
+    border-radius: 14px;
+    margin: 12px 0;
+}
+
+.calculation-box strong {
+    display: block;
+    font-size: 25px;
+    margin: 5px;
+}
+
+.calculation-box small {
+    display: block;
+}
+
+/* ================= PAYMENT ================= */
+
+.payment-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0 18px;
+}
+
+.payment {
+    padding: 14px;
+    border-radius: 12px;
+    background: #e5e7eb;
+}
+
+.payment.active-payment {
+    background: var(--success);
+    color: white;
+}
+
+/* ================= MENU ================= */
+
+.menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 150;
+    display: none;
+}
+
+.menu-overlay.show {
+    display: block;
+}
+
+.side-menu {
+    position: fixed;
+    z-index: 200;
+    top: 0;
+    right: -350px;
+    width: min(350px, 88vw);
+    height: 100vh;
+    overflow-y: auto;
+    background: white;
+    padding: 20px;
+    transition: .3s;
+    box-shadow: -4px 0 20px rgba(0,0,0,.15);
+}
+
+.side-menu.show {
+    right: 0;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-header button {
+    background: #eee;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.menu-section-title {
+    margin-top: 20px;
+    padding: 8px 5px;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: bold;
+}
+
+.side-menu > button:not(.menu-header button) {
+    width: 100%;
+    text-align: left;
+    padding: 15px;
+    background: white;
+    border-bottom: 1px solid #eee;
+}
+
+/* ================= SETTINGS ================= */
+
+.settings-card {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.settings-card button {
+    width: 100%;
+    padding: 15px;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.big-price {
+    font-size: 42px;
+    color: var(--success);
+}
+
+/* ================= CUSTOMER ================= */
+
+.add-box {
+    display: flex;
+    gap: 8px;
+}
+
+.add-box input {
+    margin: 0;
+}
+
+.add-box button {
+    background: var(--primary);
+    color: white;
+    padding: 0 20px;
+    border-radius: 12px;
+}
+
+.customer-list {
+    margin-top: 20px;
+}
+
+.customer-row {
+    background: white;
+    padding: 14px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.customer-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-btn {
+    background: #f59e0b;
+    color: white;
+    padding: 9px;
+    border-radius: 8px;
+}
+
+.delete-btn {
+    background: var(--danger);
+    color: white;
+    padding: 9px;
+    border-radius: 8px;
+}
+
+/* ================= RECORDS ================= */
+
+.excel-btn {
+    width: 100%;
+    margin: 15px 0;
+    padding: 14px;
+    background: #15803d;
+    color: white;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.record-cards {
+    display: grid;
+    gap: 10px;
+}
+
+.record-card {
+    background: white;
+    padding: 15px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.record-card h3 {
+    margin: 0 0 10px;
+}
+
+.record-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+.record-info span {
+    background: #f8fafc;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+/* ================= MAIN DAIRY ================= */
+
+.session-display {
+    background: #dbeafe;
+    padding: 12px;
+    border-radius: 12px;
+    margin: 10px 0;
+}
+
+/* ================= BUSINESS REPORT ================= */
+
+.business-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.business-card {
+    background: white;
+    padding: 16px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.business-card span {
+    display: block;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.business-card strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 20px;
+}
+
+.total-expense {
+    border: 2px solid #f59e0b;
+}
+
+.profit-card {
+    border: 2px solid var(--success);
+}
+
+.profit-card.loss {
+    border-color: var(--danger);
+}
+
+.profit-card.loss strong {
+    color: var(--danger);
+}
+
+.profit-card.profit strong {
+    color: var(--success);
+}
+
+.section-heading {
+    margin-top: 28px;
+}
+
+/* ================= TABLET ================= */
+
+@media (min-width: 600px) {
+
+    .main-actions {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .name-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .home-summary,
+    .summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .record-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .business-summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ================= LAPTOP ================= */
+
+@media (min-width: 1000px) {
+
+    .app-container {
+        padding: 30px;
+    }
+
+    .name-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .record-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .main-card {
+        min-height: 180px;
+    }
+
+    .business-summary {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ================= LOGIN + ACCOUNT ================= */
+.hidden{display:none!important}
+.login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:#f4f6fb}
+.login-screen.hidden{display:none!important}
+.login-card{width:min(100%,420px);background:#fff;border-radius:24px;padding:30px 22px;box-shadow:0 15px 45px rgba(0,0,0,.12);text-align:center}
+.login-logo{font-size:56px;margin-bottom:8px}.login-card h1{margin:0 0 8px}.login-card p{color:#666;margin:8px 0 20px}.login-card input{width:100%;box-sizing:border-box;padding:14px 15px;margin:7px 0;border:1px solid #d9dce3;border-radius:12px;font-size:16px}.login-main-btn{width:100%;padding:14px;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}.login-message{min-height:20px;font-size:14px;color:#c0392b}.login-card small{display:block;margin-top:15px;color:#888}.header-actions{display:flex;align-items:center;gap:8px}.user-chip{border:0;border-radius:18px;padding:8px 10px;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.logout-menu-btn,.danger-full-btn{background:#ffe9e9!important;color:#b42318!important}.backup-big-btn,.restore-big-btn,.danger-full-btn{width:100%;padding:13px;border:0;border-radius:12px;margin-top:10px;font-weight:700;cursor:pointer}.backup-big-btn{background:#e8f4ff}.restore-big-btn{background:#eef8ed}.danger-full-btn{background:#ffe9e9}
+@media(max-width:480px){.login-card{padding:26px 18px;border-radius:20px}.user-chip{max-width:95px;font-size:12px}}
+
+
+/* ================= UPDATED LEDGER UI ================= */
+.customer-type-badge {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #475569;
+    font-size: 12px;
+}
+.inline-edit {
+    margin-left: 6px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+.comment-add-box {
+    background: white;
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+}
+.comment-add-box textarea {
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 12px;
+    font: inherit;
+    margin-bottom: 10px;
+}
+.comment-add-box .save-btn {
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+}
+.transaction-card {
+    border-left: 4px solid var(--primary);
+}
+.negative {
+    color: var(--danger);
+    font-weight: 700;
+}
+.positive {
+    color: var(--success);
+    font-weight: 700;
+}
+.muted {
+    color: #64748b;
+}
+
+/* ================= MOBILE RESPONSIVE POLISH ================= */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+@media (max-width: 599px) {
+    body { font-size: 15px; }
+
+    .app-header { position: sticky; }
+    .header-top { padding: 9px 12px; min-height: 58px; }
+    .logo-btn { font-size: 17px; }
+    .header-actions { gap: 5px; }
+    .user-chip { max-width: 105px; padding: 8px; }
+    .menu-btn { width: 42px; height: 42px; }
+
+    .session-switch { padding: 0 10px 9px; gap: 6px; }
+    .session-switch button { min-height: 42px; padding: 9px 7px; font-size: 14px; }
+
+    .app-container { padding: 11px; width: 100%; }
+    .home-title { margin: 12px 0 17px; }
+    .home-title h1 { font-size: 25px; }
+    .home-title p { margin: 5px 0; }
+
+    .main-actions { gap: 10px; }
+    .main-card { min-height: 112px; padding: 15px; border-radius: 16px; }
+    .main-card strong { font-size: 18px; margin: 5px 0; }
+    .main-card small { font-size: 12px; }
+    .main-icon { font-size: 34px; }
+
+    .home-summary, .summary, .business-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .home-summary div, .summary div, .business-card { padding: 11px 8px; border-radius: 12px; }
+    .home-summary strong, .summary strong, .business-card strong { font-size: 17px; word-break: break-word; }
+    .business-card span { font-size: 11px; }
+
+    .page-header { gap: 9px; margin-bottom: 13px; }
+    .page-header h2 { font-size: 20px; }
+    .page-header p { font-size: 12px; }
+    .back-btn { width: 40px; height: 40px; font-size: 20px; flex: 0 0 40px; }
+
+    input, select { min-height: 48px; padding: 12px; font-size: 16px; margin: 6px 0 12px; }
+    textarea { font-size: 16px !important; }
+    label { font-size: 14px; }
+
+    .date-row { padding: 10px; }
+    .person-entry-card { padding: 17px 13px; border-radius: 16px; }
+    .person-avatar { font-size: 42px; }
+    .person-entry-card input, .person-entry-card select { font-size: 17px; }
+    .big-save { min-height: 50px; padding: 13px; }
+
+    .fat-info, .record-info { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .fat-info div, .record-info span { padding: 10px 8px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+    .calculation-box { padding: 12px; }
+    .calculation-box strong { font-size: 22px; }
+
+    .payment-buttons { gap: 7px; }
+    .payment { min-height: 46px; padding: 11px 7px; }
+
+    .add-box { align-items: stretch; }
+    .add-box input { min-width: 0; }
+    .add-box button { flex: 0 0 auto; padding: 0 14px; }
+    .customer-row { padding: 11px; gap: 8px; align-items: flex-start; }
+    .customer-row > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+    .customer-actions { flex: 0 0 auto; }
+    .edit-btn, .delete-btn { min-width: 40px; min-height: 40px; padding: 8px; }
+
+    .name-item { padding: 13px; font-size: 15px; gap: 8px; }
+    .name-item > * { min-width: 0; }
+    .name-item button { padding: 9px 11px; white-space: nowrap; }
+
+    .settings-card { padding: 17px 13px; border-radius: 16px; }
+    .big-price { font-size: 34px; }
+
+    .record-card { padding: 12px; border-radius: 12px; }
+    .record-card h3 { font-size: 16px; }
+    .excel-btn { margin: 10px 0; padding: 12px; }
+
+    .comment-add-box { padding: 11px; }
+    .comment-add-box textarea { min-height: 78px; }
+    .inline-edit { margin-left: 3px; padding: 7px 8px; font-size: 12px; }
+
+    .side-menu { width: min(330px, 90vw); padding: 14px; }
+    .side-menu > button:not(.menu-header button) { min-height: 48px; padding: 13px 12px; }
+    .menu-section-title { margin-top: 14px; }
+
+    /* Keep wide data/report tables usable without breaking the page. */
+    .table-wrap, .table-responsive, .overflow-table { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { max-width: 100%; }
+    th, td { white-space: nowrap; }
+
+    /* Prevent long names, notes and transaction details from causing horizontal scroll. */
+    .transaction-card, .profile-card, .comment-card, .record-card, .business-card, .summary div { overflow-wrap: anywhere; }
+
+    button { touch-action: manipulation; }
+}
+
+@media (max-width: 360px) {
+    .app-container { padding: 8px; }
+    .header-top { padding-left: 8px; padding-right: 8px; }
+    .logo-btn { font-size: 15px; }
+    .user-chip { max-width: 82px; font-size: 11px; }
+    .session-switch button { font-size: 13px; }
+    .home-title h1 { font-size: 22px; }
+    .main-card { min-height: 102px; }
+    .main-card strong { font-size: 16px; }
+    .main-icon { font-size: 30px; }
+    .home-summary strong, .summary strong, .business-card strong { font-size: 15px; }
+    .add-box button { padding: 0 11px; }
+}
