@@ -471,7 +471,7 @@ function updateHome() {
     document.getElementById(
         "homeMilk"
     ).innerText =
-        `${totalMilk.toFixed(1)} L`;
+        `${totalMilk.toFixed(2)} L`;
 
     document.getElementById(
         "homeAmount"
@@ -2093,6 +2093,10 @@ function renderExpenses() {
 
                 </div>
 
+                <div class="record-actions">
+                    ${recordActionButtons("expense", r.id)}
+                </div>
+
             </div>`;
         });
 }
@@ -2175,7 +2179,7 @@ function renderRecords() {
     const milk = records.reduce((sum, r) => sum + Number(r.milk || 0), 0);
     const amount = records.reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
-    document.getElementById("totalMilk").innerText = `${milk.toFixed(1)} L`;
+    document.getElementById("totalMilk").innerText = `${milk.toFixed(2)} L`;
     document.getElementById("totalAmount").innerText = money(amount);
     document.getElementById("totalDays").innerText = records.length;
 
@@ -2184,16 +2188,18 @@ function renderRecords() {
     box.innerHTML = records.length ? "" : `<div class="record-card">चुने हुए फिल्टर के अनुसार कोई रिकॉर्ड नहीं</div>`;
 
     records.forEach(r => {
-        const serial = getRecordSerial(r.name, r);
+        const isSale = r.type === "sale" || r.quantity != null;
+        const serialLabel = isSale ? getSellerSerial(r.name) : getBuyerSerial(r.name);
         box.innerHTML += `<div class="record-card">
-            <h3>${serial === 999999 ? "-" : (r.type === "sale" || r.quantity != null ? getSellerSerial(r.name) : getBuyerSerial(r.name))}. ${escapeHtml(r.name)}</h3>
+            <h3>${serialLabel}. ${escapeHtml(r.name)}</h3>
             <div class="record-info">
                 <span>📅 ${formatDate(r.date)}</span>
                 <span>${sessionName(r.session)}</span>
-                <span>🥛 ${Number(r.milk || 0).toFixed(1)} L</span>
-                <span>🧪 ${r.fat ?? "बाकी"}</span>
+                <span>🥛 ${Number(r.milk || 0).toFixed(2)} L</span>
+                <span>🧪 FAT ${r.fat != null ? Number(r.fat).toFixed(2) : "बाकी"}</span>
                 <span>💰 ${r.amount !== null && r.amount !== undefined ? money(r.amount) : "-"}</span>
             </div>
+            ${!isSale && r.id != null ? `<div class="record-actions">${recordActionButtons("milk", r.id)}</div>` : ""}
         </div>`;
     });
 
@@ -2204,12 +2210,32 @@ function renderRecords() {
 function renderAllLocalSales(records) {
     const box = document.getElementById("allLocalSaleCards"); if (!box) return;
     box.innerHTML = records.length ? "" : `<div class="record-card">कोई स्थानीय बिक्री रिकॉर्ड नहीं</div>`;
-    records.slice().sort(recordSort).forEach(r=>{ box.innerHTML += `<div class="record-card"><h3>${escapeHtml(r.name||"ग्राहक")}</h3><div class="record-info"><span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span><span>🥛 ${Number(r.quantity||0)} L</span><span>₹ ${Number(r.rate||0)}/L</span><span>💰 ${money(r.amount||0)}</span><span>${(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"}</span></div></div>`; });
+    records.slice().sort(recordSort).forEach(r=>{ box.innerHTML += `<div class="record-card">
+        <h3>${getSellerSerial(r.name||"")}. ${escapeHtml(r.name||"ग्राहक")}</h3>
+        <div class="record-info">
+            <span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span>
+            <span>🥛 ${Number(r.quantity||0).toFixed(2)} L</span>
+            <span>₹ ${Number(r.rate||0).toFixed(2)}/L</span>
+            <span>💰 ${money(r.amount||0)}</span>
+            <span>${(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"}</span>
+        </div>
+        <div class="record-actions">${recordActionButtons("sale", r.id)}</div>
+    </div>`; });
 }
 function renderAllMainDairySales(records) {
     const box = document.getElementById("allMainDairySaleCards"); if (!box) return;
     box.innerHTML = records.length ? "" : `<div class="record-card">कोई मुख्य डेयरी बिक्री रिकॉर्ड नहीं</div>`;
-    records.slice().sort(recordSort).forEach(r=>{ box.innerHTML += `<div class="record-card"><h3>🏭 मुख्य डेयरी बिक्री</h3><div class="record-info"><span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span><span>🥛 ${Number(r.milk||0)} L</span><span>🧪 ${Number(r.fat||0)} FAT</span><span>₹ ${Number(r.rate||0)}/FAT</span><span>💰 ${money(r.amount||0)}</span></div></div>`; });
+    records.slice().sort(recordSort).forEach(r=>{ box.innerHTML += `<div class="record-card">
+        <h3>🏭 मुख्य डेयरी बिक्री</h3>
+        <div class="record-info">
+            <span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span>
+            <span>🥛 ${Number(r.milk||0).toFixed(2)} L</span>
+            <span>🧪 ${Number(r.fat||0).toFixed(2)} FAT</span>
+            <span>₹ ${Number(r.rate||0).toFixed(2)}/FAT</span>
+            <span>💰 ${money(r.amount||0)}</span>
+        </div>
+        <div class="record-actions">${recordActionButtons("main", r.id)}</div>
+    </div>`; });
 }
 function downloadAllLocalSalesExcel() {
  const rows=filterByRecordControls(saleRecords).slice().sort(recordSort).map(r=>({क्रमांक:getSellerSerial(r.name||""),नाम:r.name||"",तारीख:formatDate(r.date),समय:sessionName(r.session),दूध_लीटर:Number(r.quantity||0),भाव_प्रति_लीटर:Number(r.rate||0),कुल_राशि:Number(r.amount||0),भुगतान:(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"})); if(!rows.length)return alert("कोई स्थानीय बिक्री रिकॉर्ड नहीं है"); createExcel(rows,"स्थानीय_दूध_बिक्री.xlsx","स्थानीय बिक्री");
@@ -2476,7 +2502,7 @@ function showProfile() {
     document.getElementById(
         "profileMilk"
     ).innerText =
-        `${totalMilk.toFixed(1)} L`;
+        `${totalMilk.toFixed(2)} L`;
 
 
     document.getElementById(
@@ -2518,7 +2544,7 @@ function showProfile() {
                 </span>
 
                 <span>
-                    🧪 ${r.fat ?? "बाकी"}
+                    🧪 ${r.fat != null ? Number(r.fat).toFixed(2) : "बाकी"}
                 </span>
 
                 <span>
@@ -2880,17 +2906,17 @@ function renderReportPurchase(records) {
     const box = document.getElementById("reportPurchaseCards");
     if (!box) return;
     box.innerHTML = records.length ? "" : `<div class="record-card muted">कोई खरीद रिकॉर्ड नहीं</div>`;
-    records.slice().sort(recordSort).forEach((r, i) => {
+    records.slice().sort(recordSort).forEach((r) => {
         box.innerHTML += `<div class="record-card">
             <h3>${getBuyerSerial(r.name)}. ${escapeHtml(r.name)}</h3>
             <div class="record-info">
                 <span>📅 ${formatDate(r.date)}</span>
                 <span>${sessionName(r.session)}</span>
-                <span>🥛 ${Number(r.milk || 0)} L</span>
-                <span>🧪 ${r.fat ?? "बाकी"}</span>
+                <span>🥛 ${Number(r.milk || 0).toFixed(2)} L</span>
+                <span>🧪 FAT ${r.fat != null ? Number(r.fat).toFixed(2) : "बाकी"}</span>
                 <span>💰 ${r.amount != null ? money(r.amount) : "-"}</span>
-                ${r.fat != null ? `<button class="edit-btn" onclick="editFatRecord('${r.fatId || ""}')">✏️ FAT Edit</button>` : ""}
             </div>
+            ${r.id != null ? `<div class="record-actions">${recordActionButtons("milk", r.id)}</div>` : ""}
         </div>`;
     });
 }
@@ -2899,9 +2925,9 @@ function renderReportMainDairy(records) {
     if (!box) return;
     box.innerHTML = records.length ? "" : `<div class="record-card muted">कोई मुख्य डेयरी बिक्री रिकॉर्ड नहीं</div>`;
     records.slice().sort(recordSort).forEach((r,i) => {
-        box.innerHTML += `<div class="record-card"><h3>${i+1}. 🏭 मुख्य डेयरी</h3>
+        box.innerHTML += `<div class="record-card"><h3>🏭 मुख्य डेयरी बिक्री</h3>
             <div class="record-info"><span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span>
-            <span>🥛 ${Number(r.milk||0)} L</span><span>🧪 ${Number(r.fat||0)}</span><span>💰 ${money(r.amount||0)}</span></div></div>`;
+            <span>🥛 ${Number(r.milk||0).toFixed(2)} L</span><span>🧪 FAT ${Number(r.fat||0).toFixed(2)}</span><span>💰 ${money(r.amount||0)}</span></div><div class="record-actions">${recordActionButtons("main", r.id)}</div></div>`;
     });
 }
 function generateReport() {
@@ -3033,7 +3059,7 @@ function generateReport() {
     document.getElementById(
         "reportMilk"
     ).innerText =
-        `${purchaseMilk.toFixed(1)} L`;
+        `${purchaseMilk.toFixed(2)} L`;
 
 
     document.getElementById(
@@ -3043,13 +3069,13 @@ function generateReport() {
 
 
     const mainMilkEl = document.getElementById("reportMainDairyMilk");
-    if (mainMilkEl) mainMilkEl.innerText = `${mainDairyMilk.toFixed(1)} L`;
+    if (mainMilkEl) mainMilkEl.innerText = `${mainDairyMilk.toFixed(2)} L`;
 
     const mainIncomeEl = document.getElementById("reportMainDairyIncome");
     if (mainIncomeEl) mainIncomeEl.innerText = money(mainDairyIncome);
 
     const localMilkEl = document.getElementById("reportLocalMilk");
-    if (localMilkEl) localMilkEl.innerText = `${localMilk.toFixed(1)} L`;
+    if (localMilkEl) localMilkEl.innerText = `${localMilk.toFixed(2)} L`;
 
     const localIncomeEl = document.getElementById("reportLocalIncome");
     if (localIncomeEl) localIncomeEl.innerText = money(localIncome);
@@ -3152,14 +3178,15 @@ function renderReportLocalSales(records) {
     }
     records.slice().sort(recordSort).forEach(r => {
         const status = r.status === "credit" || r.status === "udhar" ? "उधार" : "नगद";
-        box.innerHTML += `<div class="record-card"><h3>${getSellerSerial(r.name)}. ${r.name || "ग्राहक"}</h3><div class="record-info"><span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span><span>🥛 ${Number(r.quantity || 0)} L</span><span>₹ ${Number(r.rate || 0)}/L</span><span>💰 ${money(r.amount || 0)}</span><span>💳 ${status}</span></div></div>`;
+        box.innerHTML += `<div class="record-card"><h3>${getSellerSerial(r.name)}. ${r.name || "ग्राहक"}</h3><div class="record-info"><span>📅 ${formatDate(r.date)}</span><span>${sessionName(r.session)}</span><span>🥛 ${Number(r.quantity || 0).toFixed(2)} L</span><span>₹ ${Number(r.rate || 0).toFixed(2)}/L</span><span>💰 ${money(r.amount || 0)}</span><span>💳 ${status}</span></div><div class="record-actions">${recordActionButtons("sale", r.id)}</div></div>`;
     });
 }
 
 function downloadLocalSalesExcel() {
-    const records = saleRecords.filter(matchesReportPeriod);
+    const records = saleRecords.filter(matchesReportPeriod).slice().sort(recordSort);
     if (!records.length) { alert("चुनी हुई रिपोर्ट अवधि में स्थानीय बिक्री का कोई डेटा नहीं है"); return; }
     const rows = records.map(r => ({
+        क्रमांक: getSellerSerial(r.name),
         नाम: r.name || "",
         तारीख: formatDate(r.date),
         समय: sessionName(r.session),
@@ -3168,9 +3195,7 @@ function downloadLocalSalesExcel() {
         कुल_राशि: Number(r.amount || 0),
         भुगतान: (r.status === "credit" || r.status === "udhar") ? "उधार" : "नगद"
     }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "स्थानीय बिक्री");
-    XLSX.writeFile(wb, "स्थानीय_दूध_बिक्री.xlsx");
+    createExcel(rows, "स्थानीय_दूध_बिक्री.xlsx", "स्थानीय बिक्री");
 }
 
 function renderReportSales(records) {
@@ -3289,6 +3314,31 @@ function renderReportExpenses(records) {
    EXCEL
 ===================================================== */
 
+function formatExcelSheet(ws) {
+    if (!ws || !ws["!ref"]) return;
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let c = range.s.c; c <= range.e.c; c++) {
+        const headerCell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+        const header = headerCell ? String(headerCell.v || "") : "";
+        const numericColumn = /दूध|लीटर|FAT|फैट|भाव|राशि|₹|मात्रा|rate|amount|quantity/i.test(header);
+        for (let r = range.s.r; r <= range.e.r; r++) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            const cell = ws[addr];
+            if (!cell) continue;
+            cell.s = cell.s || {};
+            cell.s.alignment = { horizontal: "left", vertical: "center" };
+            if (r > range.s.r && typeof cell.v === "number" && numericColumn) {
+                cell.z = "0.00";
+            }
+        }
+    }
+    ws["!cols"] = Array.from({ length: range.e.c + 1 }, (_, c) => {
+        const header = ws[XLSX.utils.encode_cell({ r: 0, c })];
+        const h = header ? String(header.v || "") : "";
+        return { wch: Math.max(12, Math.min(24, h.length + 5)) };
+    });
+}
+
 function createExcel(
     data,
     fileName,
@@ -3314,13 +3364,13 @@ function createExcel(
             data
         );
 
+    formatExcelSheet(ws);
 
     XLSX.utils.book_append_sheet(
         wb,
         ws,
         sheetName
     );
-
 
     XLSX.writeFile(
         wb,
@@ -3672,6 +3722,7 @@ function downloadBusinessReportExcel() {
         XLSX.utils.json_to_sheet(
             summary
         );
+    formatExcelSheet(summarySheet);
 
 
     XLSX.utils.book_append_sheet(
@@ -3705,6 +3756,7 @@ function downloadBusinessReportExcel() {
 
             }))
         );
+    formatExcelSheet(saleSheet);
 
 
     XLSX.utils.book_append_sheet(
@@ -3724,6 +3776,7 @@ function downloadBusinessReportExcel() {
             भुगतान: (r.status === "credit" || r.status === "udhar") ? "उधार" : "नगद"
         }))
     );
+    formatExcelSheet(localSaleSheet);
     XLSX.utils.book_append_sheet(wb, localSaleSheet, "स्थानीय बिक्री");
 
     const expenseSheet =
@@ -3749,6 +3802,7 @@ function downloadBusinessReportExcel() {
         );
 
 
+    formatExcelSheet(expenseSheet);
     XLSX.utils.book_append_sheet(
         wb,
         expenseSheet,
@@ -3818,4 +3872,248 @@ function getSettlementRecordsForProfile() {
         if (year) records = records.filter(r => (r.date || '').startsWith(year));
     }
     return records;
+}
+
+
+/* =====================================================
+   FINAL RECORD EDIT/DELETE + CLEAR DISPLAY PATCH
+   ===================================================== */
+
+let selectedSaleRecordId = null;
+let selectedMainDairyRecordId = null;
+let selectedExpenseRecordId = null;
+
+function recordActionButtons(type, id) {
+    const safe = String(id).replace(/'/g, "\\'");
+    if (type === "milk") return `<button class="edit-btn" onclick="editMilkRecord('${safe}')">✏️ Edit</button><button class="delete-btn" onclick="deleteMilkRecord('${safe}')">🗑️ Delete</button>`;
+    if (type === "fat") return `<button class="edit-btn" onclick="editFatRecord('${safe}')">✏️ Edit</button><button class="delete-btn" onclick="deleteFatRecord('${safe}')">🗑️ Delete</button>`;
+    if (type === "sale") return `<button class="edit-btn" onclick="editSaleRecord('${safe}')">✏️ Edit</button><button class="delete-btn" onclick="deleteSaleRecord('${safe}')">🗑️ Delete</button>`;
+    if (type === "main") return `<button class="edit-btn" onclick="editMainDairyRecord('${safe}')">✏️ Edit</button><button class="delete-btn" onclick="deleteMainDairyRecord('${safe}')">🗑️ Delete</button>`;
+    if (type === "expense") return `<button class="edit-btn" onclick="editExpenseRecord('${safe}')">✏️ Edit</button><button class="delete-btn" onclick="deleteExpenseRecord('${safe}')">🗑️ Delete</button>`;
+    return "";
+}
+
+function editMilkRecord(id) {
+    const r = milkRecords.find(x => String(x.id) === String(id));
+    if (!r) return;
+    globalSession = r.session || globalSession;
+    storeSet("globalSession", globalSession);
+    const d = document.getElementById("milkDate"); if (d) d.value = r.date;
+    selectMilkPerson(r.name);
+}
+
+function deleteFatRecord(id) {
+    const r = fatRecords.find(x => String(x.id) === String(id));
+    if (!r) return;
+    if (!confirm(`${r.name} का ${formatDate(r.date)} ${sessionName(r.session)} FAT ${r.fat} हटाना है?`)) return;
+    fatRecords = fatRecords.filter(x => String(x.id) !== String(id));
+    saveAll();
+    loadFatQueue();
+    updateHome();
+    if (typeof renderRecords === 'function') renderRecords();
+}
+
+function renderFatRecordedList(queue, date) {
+    const box = document.getElementById("fatRecordedList");
+    if (!box) return;
+    const records = queue.map(p => fatRecords.find(f => f.name === p.name && f.date === date && f.session === globalSession)).filter(Boolean).sort(recordSort);
+    box.innerHTML = records.length ? `<h3 style="margin:0 0 8px;">आज दर्ज किया हुआ FAT</h3>` : "";
+    records.forEach(r => {
+        const milk = Number(milkRecords.find(m=>m.name===r.name&&m.date===r.date&&m.session===r.session)?.milk||0);
+        box.innerHTML += `<div class="record-card" style="margin-bottom:8px;">
+            <h3>${getBuyerSerial(r.name)}. ${escapeHtml(r.name)}</h3>
+            <div class="record-info">
+              <span>🥛 दूध: <strong>${milk.toFixed(2)} L</strong></span>
+              <span>🧪 FAT: <strong>${Number(r.fat).toFixed(2)}</strong></span>
+              <span>💰 राशि: <strong>${money(r.amount||0)}</strong></span>
+            </div>
+            <div class="record-actions">${recordActionButtons('fat', r.id)}</div>
+        </div>`;
+    });
+}
+
+function saveFat() {
+    if (fatRate <= 0) return alert("पहले मेन्यू से फैट का भाव सेट करें");
+    const button = document.getElementById("fatSaveBtn");
+    const name = button?.dataset.name;
+    const milk = Number(button?.dataset.milk || 0);
+    const date = document.getElementById("fatDate")?.value;
+    const fat = Number(document.getElementById("fatValue")?.value);
+    if (!name || !date || milk <= 0 || fat <= 0) return alert("फैट लिखें");
+    const editId = button.dataset.editId;
+    let existing = editId ? fatRecords.find(f => String(f.id) === String(editId)) : null;
+    if (!existing) existing = fatRecords.find(f => f.name===name && f.date===date && f.session===globalSession);
+    if (existing) {
+        existing.fat = fat;
+        existing.fatRate = Number(existing.fatRate || fatRate);
+        existing.amount = fat * existing.fatRate * milk;
+        existing.updatedAt = Date.now();
+    } else {
+        fatRecords.push({ id: Date.now(), name, date, session: globalSession, fat, fatRate, amount: fat * fatRate * milk });
+    }
+    saveAll();
+    button.innerText = "✓ फैट सेव करें";
+    delete button.dataset.editId;
+    const recorded = document.getElementById("fatRecordedValue"); if (recorded) recorded.innerText = `FAT ${fat}`;
+    loadFatQueue();
+    updateHome();
+    if (typeof renderRecords === 'function') renderRecords();
+}
+
+function editFatRecord(id) {
+    const record = fatRecords.find(f => String(f.id) === String(id));
+    if (!record) return;
+    globalSession = record.session || globalSession;
+    storeSet("globalSession", globalSession);
+    openPage("fatPage");
+    const dateEl = document.getElementById("fatDate"); if (dateEl) dateEl.value = record.date;
+    const milk = Number(milkRecords.find(m => m.name===record.name && m.date===record.date && m.session===record.session)?.milk || 0);
+    const nameEl=document.getElementById("fatPersonName"); if(nameEl) nameEl.innerText=record.name;
+    const serialEl=document.getElementById("fatSerial"); if(serialEl) serialEl.innerText=getBuyerSerial(record.name);
+    const milkEl=document.getElementById("fatPersonMilk"); if(milkEl) milkEl.innerText=`${milk.toFixed(2)} L`;
+    const valueEl=document.getElementById("fatValue"); if(valueEl) valueEl.value=record.fat;
+    const btn=document.getElementById("fatSaveBtn");
+    if(btn){ btn.dataset.name=record.name; btn.dataset.milk=milk; btn.dataset.editId=record.id; btn.innerText="✓ FAT अपडेट करें"; btn.style.display="block"; }
+    const rec=document.getElementById("fatRecordedValue"); if(rec) rec.innerText=`FAT ${record.fat}`;
+    const edit=document.getElementById("fatEditCurrentBtn"); if(edit){ edit.style.display="inline-block"; edit.dataset.id=record.id; }
+    previewFat();
+}
+
+function renderSaleNames() {
+    const box=document.getElementById("saleNameList"); if(!box) return;
+    const date=document.getElementById("saleDate")?.value || today;
+    box.innerHTML="";
+    sortedCustomerNames("seller").forEach(name=>{
+        if(!isSeller(name)) return;
+        const records=saleRecords.filter(r=>r.name===name && r.date===date && r.session===globalSession).sort(recordSort);
+        const total=records.reduce((s,r)=>s+Number(r.quantity||0),0);
+        const amount=records.reduce((s,r)=>s+Number(r.amount||0),0);
+        const item=document.createElement("div"); item.className=`name-item ${records.length?"done":""}`;
+        const info=document.createElement("span");
+        info.innerHTML=`<strong>${getSellerSerial(name)}. ${escapeHtml(name)}</strong><br><small>${records.length ? `✓ आज ${total.toFixed(2)} L • ${money(amount)}` : "आज बिक्री दर्ज नहीं"}</small>`;
+        const actions=document.createElement("div"); actions.style.cssText="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;";
+        const add=document.createElement("button"); add.innerText=records.length?"➕ और जोड़ें":"चुनें →"; add.onclick=()=>selectSalePerson(name); actions.appendChild(add);
+        if(records.length){ records.forEach(r=>{ const e=document.createElement('button'); e.className='edit-btn'; e.innerText='✏️'; e.title=`${r.quantity} L Edit`; e.onclick=()=>editSaleRecord(r.id); actions.appendChild(e); const d=document.createElement('button'); d.className='delete-btn'; d.innerText='🗑️'; d.title='यह बिक्री हटाएँ'; d.onclick=()=>deleteSaleRecord(r.id); actions.appendChild(d); }); }
+        item.appendChild(info); item.appendChild(actions); box.appendChild(item);
+    });
+}
+
+function editSaleRecord(id){
+    const r=saleRecords.find(x=>String(x.id)===String(id)); if(!r) return;
+    selectedSaleRecordId=r.id; selectedSalePerson=r.name;
+    globalSession=r.session||globalSession; storeSet("globalSession",globalSession);
+    const d=document.getElementById("saleDate"); if(d)d.value=r.date;
+    document.getElementById("salePersonName").innerText=r.name;
+    document.getElementById("saleEntryInfo").innerText=`${formatDate(r.date)} • ${sessionName(r.session)} • बिक्री Edit`;
+    document.getElementById("saleQuantity").value=r.quantity;
+    document.getElementById("saleRateDisplay").innerText=milkSaleRate;
+    setPayment(r.status||"cash");
+    const btn=document.querySelector('#saleEntryPage .big-save'); if(btn)btn.innerText="✓ बिक्री अपडेट करें";
+    previewSaleAmount(); openPage("saleEntryPage");
+}
+
+function deleteSaleRecord(id){
+    const r=saleRecords.find(x=>String(x.id)===String(id)); if(!r)return;
+    if(!confirm(`${r.name} की ${formatDate(r.date)} ${sessionName(r.session)} की ${r.quantity} L बिक्री हटानी है?`))return;
+    saleRecords=saleRecords.filter(x=>String(x.id)!==String(id)); saveAll(); renderSaleNames(); renderRecords(); updateHome();
+}
+
+function saveSaleFast(){
+    if(milkSaleRate<=0)return alert("पहले मेन्यू से दूध का भाव सेट करें");
+    const quantity=Number(document.getElementById("saleQuantity")?.value); const date=document.getElementById("saleDate")?.value;
+    if(!selectedSalePerson||!date||quantity<=0)return alert("दूध की मात्रा लिखें");
+    let r=selectedSaleRecordId ? saleRecords.find(x=>String(x.id)===String(selectedSaleRecordId)) : null;
+    if(!r){ r={id:Date.now()}; saleRecords.push(r); }
+    r.name=selectedSalePerson; r.date=date; r.session=globalSession; r.quantity=quantity; r.rate=milkSaleRate; r.amount=quantity*milkSaleRate; r.status=salePayment; r.updatedAt=Date.now();
+    saveAll(); selectedSaleRecordId=null; selectedSalePerson=null;
+    const btn=document.querySelector('#saleEntryPage .big-save'); if(btn)btn.innerText="✓ बिक्री सेव करें";
+    openSaleNames(); renderSaleNames(); updateHome(); renderRecords();
+}
+
+function editMainDairyRecord(id){
+    const r=mainDairySales.find(x=>String(x.id)===String(id)); if(!r)return;
+    selectedMainDairyRecordId=r.id; globalSession=r.session||globalSession; storeSet("globalSession",globalSession);
+    openPage("mainDairySalePage");
+    document.getElementById("mainDairyDate").value=r.date; document.getElementById("mainDairyMilk").value=r.milk; document.getElementById("mainDairyFat").value=r.fat; previewMainDairyAmount();
+    const btn=document.querySelector('#mainDairySalePage .big-save'); if(btn)btn.innerText="✓ बिक्री अपडेट करें";
+}
+function deleteMainDairyRecord(id){
+    const r=mainDairySales.find(x=>String(x.id)===String(id)); if(!r)return;
+    if(!confirm(`${formatDate(r.date)} ${sessionName(r.session)} की मुख्य डेयरी बिक्री ${r.milk} L हटानी है?`))return;
+    mainDairySales=mainDairySales.filter(x=>String(x.id)!==String(id)); saveAll(); renderMainDairyRecords(); renderRecords(); generateReport();
+}
+function saveMainDairySale(){
+    if(mainDairyFatRate<=0)return alert("पहले मुख्य डेयरी FAT भाव सेट करें");
+    const date=document.getElementById("mainDairyDate")?.value; const milk=Number(document.getElementById("mainDairyMilk")?.value); const fat=Number(document.getElementById("mainDairyFat")?.value);
+    if(!date||milk<=0||fat<=0)return alert("तारीख, दूध और फैट सही लिखें");
+    let r=selectedMainDairyRecordId?mainDairySales.find(x=>String(x.id)===String(selectedMainDairyRecordId)):null;
+    if(!r){r={id:Date.now()};mainDairySales.push(r);}
+    r.date=date;r.session=globalSession;r.milk=milk;r.fat=fat;r.rate=mainDairyFatRate;r.amount=milk*fat*mainDairyFatRate;r.updatedAt=Date.now();
+    saveAll();selectedMainDairyRecordId=null;
+    document.getElementById("mainDairyMilk").value="";document.getElementById("mainDairyFat").value="";document.getElementById("mainDairyAmountPreview").innerText="0";
+    const btn=document.querySelector('#mainDairySalePage .big-save');if(btn)btn.innerText="✓ बिक्री सेव करें";
+    renderMainDairyRecords();renderRecords();generateReport();
+}
+function renderMainDairyRecords(){
+    const box=document.getElementById("mainDairyRecords");if(!box)return;box.innerHTML="";
+    mainDairySales.slice().sort(recordSort).slice(0,50).forEach(r=>{
+        box.innerHTML+=`<div class="record-card"><h3>🏭 मुख्य डेयरी</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.milk).toFixed(2)} L</strong></span><span>🧪 FAT: <strong>${Number(r.fat).toFixed(2)}</strong></span><span>💰 राशि: <strong>${money(r.amount||0)}</strong></span></div><div class="record-actions">${recordActionButtons('main',r.id)}</div></div>`;
+    });
+}
+
+function editExpenseRecord(id){
+    const r=expenseRecords.find(x=>String(x.id)===String(id));if(!r)return;selectedExpenseRecordId=r.id;globalSession=r.session||globalSession;storeSet("globalSession",globalSession);openPage("expensePage");document.getElementById("expenseDate").value=r.date;document.getElementById("expenseType").value=r.type;document.getElementById("expenseAmount").value=r.amount;document.getElementById("expenseNote").value=r.note||"";const b=document.querySelector('#expensePage .big-save');if(b)b.innerText="✓ खर्च अपडेट करें";
+}
+function deleteExpenseRecord(id){const r=expenseRecords.find(x=>String(x.id)===String(id));if(!r)return;if(!confirm(`${expenseName(r.type)} ${money(r.amount)} का खर्च हटाना है?`))return;expenseRecords=expenseRecords.filter(x=>String(x.id)!==String(id));saveAll();renderExpenses();generateReport();}
+function saveExpense(){
+    const date=document.getElementById("expenseDate")?.value,type=document.getElementById("expenseType")?.value,amount=Number(document.getElementById("expenseAmount")?.value),note=document.getElementById("expenseNote")?.value.trim()||"";
+    if(!date||amount<=0)return alert("तारीख और सही राशि लिखें");
+    let r=selectedExpenseRecordId?expenseRecords.find(x=>String(x.id)===String(selectedExpenseRecordId)):null;if(!r){r={id:Date.now()};expenseRecords.push(r);}
+    r.date=date;r.session=globalSession;r.type=type;r.amount=amount;r.note=note;r.updatedAt=Date.now();saveAll();selectedExpenseRecordId=null;document.getElementById("expenseAmount").value="";document.getElementById("expenseNote").value="";const b=document.querySelector('#expensePage .big-save');if(b)b.innerText="✓ खर्च सेव करें";renderExpenses();generateReport();
+}
+function renderExpenses(){const box=document.getElementById("expenseRecords");if(!box)return;box.innerHTML="";expenseRecords.slice().sort(recordSort).slice(0,50).forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>${expenseName(r.type)}</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>💰 राशि: <strong>${money(r.amount)}</strong></span><span>📝 विवरण: <strong>${escapeHtml(r.note||"-")}</strong></span></div><div class="record-actions">${recordActionButtons('expense',r.id)}</div></div>`;});}
+
+function renderAllLocalSales(records){const box=document.getElementById("allLocalSaleCards");if(!box)return;records=records.slice().sort(recordSort);box.innerHTML=records.length?"":"<div class=\"record-card\">कोई स्थानीय बिक्री रिकॉर्ड नहीं</div>";records.forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>${getSellerSerial(r.name)}. ${escapeHtml(r.name||"ग्राहक")}</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.quantity||0).toFixed(2)} L</strong></span><span>💵 भाव: <strong>${money(r.rate||0)}/L</strong></span><span>💰 राशि: <strong>${money(r.amount||0)}</strong></span><span>💳 भुगतान: <strong>${(r.status==='credit'||r.status==='udhar')?'उधार':'नगद'}</strong></span></div><div class="record-actions">${recordActionButtons('sale',r.id)}</div></div>`;});}
+
+function renderRecords(){
+    const records=filterByRecordControls(combinedRecords()).slice().sort(recordSort), localSales=filterByRecordControls(saleRecords).slice().sort(recordSort), mainSales=filterByRecordControls(mainDairySales).slice().sort(recordSort);
+    const milk=records.reduce((s,r)=>s+Number(r.milk||0),0), amount=records.reduce((s,r)=>s+Number(r.amount||0),0);
+    document.getElementById("totalMilk").innerText=`${milk.toFixed(2)} L`;document.getElementById("totalAmount").innerText=money(amount);document.getElementById("totalDays").innerText=records.length;
+    const box=document.getElementById("recordsCards");if(box){box.innerHTML=records.length?"":"<div class=\"record-card\">चुने हुए फिल्टर के अनुसार कोई रिकॉर्ड नहीं</div>";records.forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>${getBuyerSerial(r.name)}. ${escapeHtml(r.name)}</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.milk||0).toFixed(2)} L</strong></span><span>🧪 FAT: <strong>${r.fat??"बाकी"}</strong></span><span>💰 राशि: <strong>${r.amount!=null?money(r.amount):"-"}</strong></span></div><div class="record-actions">${recordActionButtons('milk',r.id)}</div></div>`;});}
+    renderAllLocalSales(localSales);renderAllMainDairySales(mainSales);
+}
+function renderAllMainDairySales(records){const box=document.getElementById("allMainDairySaleCards");if(!box)return;records=records.slice().sort(recordSort);box.innerHTML=records.length?"":"<div class=\"record-card\">कोई मुख्य डेयरी बिक्री रिकॉर्ड नहीं</div>";records.forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>🏭 मुख्य डेयरी</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.milk||0).toFixed(2)} L</strong></span><span>🧪 FAT: <strong>${Number(r.fat||0).toFixed(2)}</strong></span><span>💰 राशि: <strong>${money(r.amount||0)}</strong></span></div><div class="record-actions">${recordActionButtons('main',r.id)}</div></div>`;});}
+
+function downloadAllRecordsExcel(){
+    const rows=filterByRecordControls(combinedRecords()).slice().sort(recordSort).map(r=>({क्रमांक:getBuyerSerial(r.name),नाम:r.name||"",तारीख:formatDate(r.date),समय:sessionName(r.session),"दूध (लीटर)":Number(r.milk||0),FAT:r.fat??"बाकी","FAT भाव":r.fatRate??"",राशि:r.amount??""}));
+    createExcel(rows,"सभी_डेयरी_रिकॉर्ड.xlsx","रिकॉर्ड");
+}
+function downloadProfileExcel(){
+    const name=document.getElementById("profileCustomer")?.value;if(!name)return alert("पहले व्यक्ति चुनें");
+    const rows=getProfileFilteredRecords().slice().sort(recordSort).map(r=>({क्रमांक:getBuyerSerial(r.name),नाम:r.name||"",तारीख:formatDate(r.date),समय:sessionName(r.session),"दूध (लीटर)":Number(r.milk||0),FAT:r.fat??"बाकी",राशि:r.amount??""}));createExcel(rows,`${name}_प्रोफाइल.xlsx`,`प्रोफाइल`);
+}
+function downloadAllLocalSalesExcel(){const rows=filterByRecordControls(saleRecords).slice().sort(recordSort).map(r=>({क्रमांक:getSellerSerial(r.name||""),नाम:r.name||"",तारीख:formatDate(r.date),समय:sessionName(r.session),"दूध (लीटर)":Number(r.quantity||0),"भाव (₹/L)":Number(r.rate||0),"कुल राशि (₹)":Number(r.amount||0),भुगतान:(r.status==='credit'||r.status==='udhar')?'उधार':'नगद'}));if(!rows.length)return alert("कोई स्थानीय बिक्री रिकॉर्ड नहीं है");createExcel(rows,"स्थानीय_दूध_बिक्री.xlsx","स्थानीय बिक्री");}
+function downloadMainDairyExcel(){const rows=mainDairySales.slice().sort(recordSort).map(r=>({क्रमांक:"",नाम:"मुख्य डेयरी",तारीख:formatDate(r.date),समय:sessionName(r.session),"दूध (लीटर)":Number(r.milk||0),FAT:Number(r.fat||0),"FAT भाव":Number(r.rate||0),"कुल राशि (₹)":Number(r.amount||0)}));createExcel(rows,"मुख्य_डेयरी_बिक्री.xlsx","मुख्य डेयरी बिक्री");}
+function downloadExpenseExcel(){const rows=expenseRecords.slice().sort(recordSort).map(r=>({तारीख:formatDate(r.date),समय:sessionName(r.session),प्रकार:expenseName(r.type),"राशि (₹)":Number(r.amount||0),विवरण:r.note||""}));createExcel(rows,"डेयरी_खर्च.xlsx","खर्च");}
+
+/* FINAL REPORT ACTIONS */
+function renderReportPurchase(records) {
+    const box=document.getElementById("reportPurchaseCards"); if(!box)return;
+    records=records.slice().sort(recordSort); box.innerHTML=records.length?"":"<div class='record-card muted'>कोई खरीद रिकॉर्ड नहीं</div>";
+    records.forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>${getBuyerSerial(r.name)}. ${escapeHtml(r.name)}</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.milk||0).toFixed(2)} L</strong></span><span>🧪 FAT: <strong>${r.fat??"बाकी"}</strong></span><span>💰 राशि: <strong>${r.amount!=null?money(r.amount):"-"}</strong></span></div><div class="record-actions">${recordActionButtons('milk',r.id)}</div></div>`;});
+}
+function renderReportLocalSales(records) {
+    const box=document.getElementById("reportLocalSaleCards"); if(!box)return;
+    records=records.slice().sort(recordSort); box.innerHTML=records.length?"":"<div class='record-card muted'>कोई स्थानीय बिक्री रिकॉर्ड नहीं</div>";
+    records.forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>${getSellerSerial(r.name)}. ${escapeHtml(r.name||"ग्राहक")}</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.quantity||0).toFixed(2)} L</strong></span><span>💵 भाव: <strong>${money(r.rate||0)}/L</strong></span><span>💰 राशि: <strong>${money(r.amount||0)}</strong></span><span>💳 भुगतान: <strong>${(r.status==='credit'||r.status==='udhar')?'उधार':'नगद'}</strong></span></div><div class="record-actions">${recordActionButtons('sale',r.id)}</div></div>`;});
+}
+function renderReportMainDairy(records) {
+    const box=document.getElementById("reportMainDairyCards"); if(!box)return;
+    records=records.slice().sort(recordSort); box.innerHTML=records.length?"":"<div class='record-card muted'>कोई मुख्य डेयरी बिक्री रिकॉर्ड नहीं</div>";
+    records.forEach(r=>{box.innerHTML+=`<div class="record-card"><h3>🏭 मुख्य डेयरी बिक्री</h3><div class="record-info"><span>📅 तारीख: <strong>${formatDate(r.date)}</strong></span><span>🕒 समय: <strong>${sessionName(r.session)}</strong></span><span>🥛 दूध: <strong>${Number(r.milk||0).toFixed(2)} L</strong></span><span>🧪 FAT: <strong>${Number(r.fat||0).toFixed(2)}</strong></span><span>💰 राशि: <strong>${money(r.amount||0)}</strong></span></div><div class="record-actions">${recordActionButtons('main',r.id)}</div></div>`;});
+}
+function downloadMainDairyExcel(){
+    const rows=filterByRecordControls(mainDairySales).slice().sort(recordSort).map(r=>({क्रमांक:"",नाम:"मुख्य डेयरी",तारीख:formatDate(r.date),समय:sessionName(r.session),"दूध (लीटर)":Number(r.milk||0),FAT:Number(r.fat||0),"FAT भाव":Number(r.rate||0),"कुल राशि (₹)":Number(r.amount||0)}));
+    if(!rows.length)return alert("चुने हुए फिल्टर के अनुसार कोई मुख्य डेयरी रिकॉर्ड नहीं है");
+    createExcel(rows,"मुख्य_डेयरी_बिक्री.xlsx","मुख्य डेयरी बिक्री");
 }

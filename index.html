@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="style.css">
 
     <!-- Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 </head>
 
 <body>
@@ -326,7 +326,7 @@
         <p id="milkEntryInfo"></p>
 
 
-        <label>कितना दूध (लीटर)?</label>
+        <label>🥛 दूध की मात्रा (लीटर)</label>
 
         <input
             type="number"
@@ -515,6 +515,7 @@
         <input
             type="date"
             id="saleDate"
+            onchange="renderSaleNames()"
         >
 
     </div>
@@ -566,7 +567,7 @@
         <p id="saleEntryInfo"></p>
 
 
-        <label>कितना दूध बेचा?</label>
+        <label>🥛 दूध की मात्रा (लीटर)</label>
 
         <input
             type="number"

@@ -864,3 +864,5 @@ html, body { max-width: 100%; overflow-x: hidden; }
     .home-summary strong, .summary strong, .business-card strong { font-size: 15px; }
     .add-box button { padding: 0 11px; }
 }
+
+.record-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.record-actions button{min-height:38px;padding:8px 11px;border-radius:9px;cursor:pointer}.record-info strong{font-weight:700}.name-item.done{border:1px solid #bbf7d0}
