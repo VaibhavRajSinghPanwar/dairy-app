@@ -47,12 +47,26 @@ function loadUserData() {
     mainDairyFatRate = Number(storeGet("mainDairyFatRate", 0)) || 0;
     globalSession = storeGet("globalSession", "morning") || "morning";
     // Backward compatibility: all old names are treated as milk suppliers.
-    customers.forEach(name => {
+    // Rebuild/upgrade profiles from all record sources so seller profiles
+    // are not lost when moving data between phones or using an older backup.
+    const referencedNames = new Set([
+        ...customers,
+        ...milkRecords.map(r => r.name).filter(Boolean),
+        ...fatRecords.map(r => r.name).filter(Boolean),
+        ...saleRecords.map(r => r.name).filter(Boolean),
+        ...settlementRecords.map(r => r.name).filter(Boolean),
+        ...profileComments.map(r => r.name).filter(Boolean)
+    ]);
+    referencedNames.forEach(name => {
+        if (!customers.includes(name)) customers.push(name);
         if (!customerTypes[name]) customerTypes[name] = "buyer";
+        if (saleRecords.some(r => r.name === name)) {
+            customerTypes[name] = customerTypes[name] === "buyer" ? "both" : customerTypes[name];
+        }
         ensureCustomerSerials(name);
     });
     saveCustomerSerialsIfNeeded();
-    [milkRecords, fatRecords, saleRecords, mainDairySales, expenseRecords].forEach(list => list.forEach(r => { if (!r.session) r.session = "morning"; }));
+    [milkRecords, fatRecords, saleRecords, mainDairySales, expenseRecords, settlementRecords, profileComments].forEach(list => list.forEach(r => { if (!r.session) r.session = "morning"; }));
 }
 function migrateOldData(username) {
     const keys = ["customers","milkRecords","fatRecords","saleRecords","mainDairySales","expenseRecords","settlementRecords","fatRate","milkSaleRate","mainDairyFatRate","globalSession"];
@@ -137,9 +151,41 @@ function startApp() {
 }
 function downloadBackup() {
     if (!activeUser) return;
-    const backup = { version: 3, app: "Dairy Management", username: activeUser, createdAt: new Date().toISOString(), data: { customers, milkRecords, fatRecords, saleRecords, mainDairySales, expenseRecords, settlementRecords, customerTypes, customerSerials, profileComments, fatRate, milkSaleRate, mainDairyFatRate, globalSession } };
+
+    // Keep every data collection in the backup. Aliases are included for
+    // compatibility with older builds that used a different key name.
+    const backup = {
+        version: 5,
+        app: "Dairy Management",
+        username: activeUser,
+        createdAt: new Date().toISOString(),
+        data: {
+            customers,
+            milkRecords,
+            fatRecords,
+            saleRecords,
+            localSales: saleRecords,
+            mainDairySales,
+            expenseRecords,
+            settlementRecords,
+            customerTypes,
+            customerSerials,
+            profileComments,
+            fatRate,
+            milkSaleRate,
+            mainDairyFatRate,
+            globalSession
+        }
+    };
+
     const blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `dairy-backup-${activeUser}-${today}.json`; a.click(); URL.revokeObjectURL(a.href);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `dairy-backup-${activeUser}-${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
 }
 function restoreBackup(event) {
     const file = event.target.files && event.target.files[0]; if (!file) return;
@@ -148,7 +194,40 @@ function restoreBackup(event) {
     reader.onload = () => { try {
         const backup = JSON.parse(reader.result); if (!backup || !backup.data) throw new Error();
         const d = backup.data;
-        customers = Array.isArray(d.customers)?d.customers:[]; milkRecords = Array.isArray(d.milkRecords)?d.milkRecords:[]; fatRecords = Array.isArray(d.fatRecords)?d.fatRecords:[]; saleRecords = Array.isArray(d.saleRecords)?d.saleRecords:[]; mainDairySales = Array.isArray(d.mainDairySales)?d.mainDairySales:[]; expenseRecords = Array.isArray(d.expenseRecords)?d.expenseRecords:[]; settlementRecords = Array.isArray(d.settlementRecords)?d.settlementRecords:[]; customerTypes = (d.customerTypes && typeof d.customerTypes === "object") ? d.customerTypes : {}; customerSerials = (d.customerSerials && typeof d.customerSerials === "object") ? d.customerSerials : {}; profileComments = Array.isArray(d.profileComments)?d.profileComments:[]; customers.forEach(n => { if (!customerTypes[n]) customerTypes[n] = "buyer"; ensureCustomerSerials(n); }); saveCustomerSerialsIfNeeded(); fatRate=Number(d.fatRate)||0; milkSaleRate=Number(d.milkSaleRate)||0; mainDairyFatRate=Number(d.mainDairyFatRate)||0; globalSession=d.globalSession||"morning";
+        customers = Array.isArray(d.customers)?d.customers:[];
+        milkRecords = Array.isArray(d.milkRecords)?d.milkRecords:[];
+        fatRecords = Array.isArray(d.fatRecords)?d.fatRecords:[];
+        // Older backups may have called local sales "localSales".
+        saleRecords = Array.isArray(d.saleRecords) ? d.saleRecords :
+                       (Array.isArray(d.localSales) ? d.localSales : []);
+        mainDairySales = Array.isArray(d.mainDairySales)?d.mainDairySales:[];
+        expenseRecords = Array.isArray(d.expenseRecords)?d.expenseRecords:[];
+        settlementRecords = Array.isArray(d.settlementRecords)?d.settlementRecords:[];
+        customerTypes = (d.customerTypes && typeof d.customerTypes === "object") ? d.customerTypes : {};
+        customerSerials = (d.customerSerials && typeof d.customerSerials === "object") ? d.customerSerials : {};
+        profileComments = Array.isArray(d.profileComments)?d.profileComments:[];
+
+        // Restore profiles even when an older backup did not contain the
+        // seller list/profile metadata. Any name present in a sale record
+        // becomes a seller; if already a buyer, the same profile becomes BOTH.
+        const restoredNames = new Set([
+            ...customers,
+            ...milkRecords.map(r=>r.name).filter(Boolean),
+            ...fatRecords.map(r=>r.name).filter(Boolean),
+            ...saleRecords.map(r=>r.name).filter(Boolean),
+            ...settlementRecords.map(r=>r.name).filter(Boolean),
+            ...profileComments.map(r=>r.name).filter(Boolean)
+        ]);
+        restoredNames.forEach(n => {
+            if (!customers.includes(n)) customers.push(n);
+            if (!customerTypes[n]) customerTypes[n] = "buyer";
+            if (saleRecords.some(r=>r.name===n)) {
+                customerTypes[n] = customerTypes[n] === "buyer" ? "both" : customerTypes[n];
+            }
+            ensureCustomerSerials(n);
+        });
+        saveCustomerSerialsIfNeeded();
+        fatRate=Number(d.fatRate)||0; milkSaleRate=Number(d.milkSaleRate)||0; mainDairyFatRate=Number(d.mainDairyFatRate)||0; globalSession=d.globalSession||"morning";
         saveAll(); updateSessionUI(); updateHome(); alert("बैकअप सफलतापूर्वक वापस डाल दिया गया"); goHome();
     } catch(e) { alert("यह सही डेयरी बैकअप फाइल नहीं है"); } event.target.value=""; }; reader.readAsText(file);
 }
@@ -2492,6 +2571,11 @@ function showProfile() {
         if (year) settlements = settlements.filter(r => r.date.startsWith(year));
     }
 
+    const soldMilk = sales.reduce((sum, r) => {
+        const qty = Number(r.quantity ?? r.milk ?? r.liters ?? r.qty ?? 0);
+        return sum + (Number.isFinite(qty) ? qty : 0);
+    }, 0);
+
     const creditSales = sales.filter(r => r.status === "credit" || r.status === "udhar").reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const received = settlements.filter(r => r.type === "received").reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const paid = settlements.filter(r => r.type === "paid").reduce((sum, r) => sum + Number(r.amount || 0), 0);
@@ -2504,6 +2588,8 @@ function showProfile() {
     ).innerText =
         `${totalMilk.toFixed(2)} L`;
 
+    const soldMilkEl = document.getElementById("profileSoldMilk");
+    if (soldMilkEl) soldMilkEl.innerText = `${soldMilk.toFixed(2)} L`;
 
     document.getElementById(
         "profileAmount"
@@ -2567,9 +2653,19 @@ function showProfile() {
 
     if (sales.length) {
         box.innerHTML += `<h3 class="section-heading">🏪 इस व्यक्ति की दूध बिक्री</h3>`;
-        sales.slice().sort(recordSort).forEach(r=>{ const status=(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"; box.innerHTML += `<div class="record-card"><h3>🏪 ${formatDate(r.date)} • ${sessionName(r.session)}</h3><div class="record-info"><span>🥛 ${Number(r.quantity||0)} L</span><span>₹ ${Number(r.rate||0)}/L</span><span>💰 ${money(r.amount||0)}</span><span>💳 ${status}</span></div></div>`; });
+        sales.slice().sort(recordSort).forEach(r=>{ const status=(r.status==="credit"||r.status==="udhar")?"उधार":"नगद"; box.innerHTML += `<div class="record-card"><h3>🏪 ${formatDate(r.date)} • ${sessionName(r.session)}</h3><div class="record-info"><span>🥛 ${Number(r.quantity ?? r.milk ?? r.liters ?? r.qty ?? 0).toFixed(2)} L</span><span>₹ ${Number(r.rate||0).toFixed(2)}/L</span><span>💰 ${money(r.amount||0)}</span><span>💳 ${status}</span></div></div>`; });
     }
 
+
+    // Keep the profile header in sync with the exact sales records shown below.
+    const soldMilkHeader = document.getElementById("profileSoldMilk");
+    if (soldMilkHeader) {
+        const visibleSoldMilk = sales.reduce((sum, r) => {
+            const qty = Number(r.quantity ?? r.milk ?? r.liters ?? r.qty ?? 0);
+            return sum + (Number.isFinite(qty) ? qty : 0);
+        }, 0);
+        soldMilkHeader.innerText = `${visibleSoldMilk.toFixed(2)} L`;
+    }
 
     const comments = profileComments.filter(c => c.name === name).sort(recordSort);
     box.innerHTML += `<h3 class="section-heading">📝 तारीख के अनुसार टिप्पणियाँ</h3>
